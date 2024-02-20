@@ -24,24 +24,63 @@ function handleCSVUpload(event) {
 }
 
 function handleShapefileUpload(event) {
-    // Show the loading bar and reset its width
     document.getElementById('loadingBarContainer').style.display = 'block';
     document.getElementById('loadingBar').style.width = '100%';
 
     const file = event.target.files[0];
-    // Extract the base name for the shapefile without the extension
-    shapefileName = file.name.split('.').slice(0, -1).join('.').replace(/_/g, ' '); // Adjust as necessary
+    shapefileName = file.name.split('.').slice(0, -1).join('.').replace(/_/g, ' ');
 
+    if (file.name.endsWith('.zip')) {
+        // Initial call to handle ZIP files, starting with depth 0
+        processNestedZip(file, 0);
+    } else {
+        // Directly process non-ZIP shapefile uploads (for completeness)
+        processShapefile(file);
+    }
+}
+
+async function processNestedZip(file, depth) {
+    try {
+        const zip = await JSZip.loadAsync(file);
+        let containsShp = Object.keys(zip.files).some(fileName => fileName.toLowerCase().endsWith('.shp'));
+
+        if (containsShp && depth <= 1) {
+            // Found a ZIP with a .shp file, process it with shpjs
+            processShapefile(file);
+        } else if (depth <= 1) {
+            // Recursively process nested ZIPs
+            for (const [fileName, zipEntry] of Object.entries(zip.files)) {
+                if (fileName.toLowerCase().endsWith('.zip')) {
+                    const nestedZipBlob = await zipEntry.async("blob");
+                    await processNestedZip(nestedZipBlob, depth + 1);
+                }
+            }
+        } else {
+            console.log('Maximum zip nesting level reached or no .shp file found.');
+            document.getElementById('loadingBarContainer').style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error processing ZIP file:', error);
+        document.getElementById('loadingBarContainer').style.display = 'none';
+    }
+}
+
+function processShapefile(file) {
     fileToArrayBuffer(file).then(buffer => {
         shp(buffer).then(function(geojson) {
             console.log("Converted GeoJSON:", geojson);
             globalShapefileGeoJSON = geojson;
             const shapefileFields = Object.keys(geojson.features[0].properties);
             populateFieldSelections(shapefileFields, 'shapefileFieldSelect');
-
             document.getElementById('loadingBarContainer').style.display = 'none';
-        }).catch(console.error);
-    }).catch(console.error);
+        }).catch(error => {
+            console.error('Error processing shapefile:', error);
+            document.getElementById('loadingBarContainer').style.display = 'none';
+        });
+    }).catch(error => {
+        console.error('Error converting file to ArrayBuffer:', error);
+        document.getElementById('loadingBarContainer').style.display = 'none';
+    });
 }
 
 function fileToArrayBuffer(file) {
