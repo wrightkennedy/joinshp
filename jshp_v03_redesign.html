@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join CSV to Shapefile</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 800px; /* Adjusted for side-by-side layout */
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .flex-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .column {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            margin-right: 20px;
+        }
+        .column:last-child {
+            margin-right: 0;
+        }
+        input[type="text"], input[type="file"], select, button, .toggle-switch {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+            background-color: #fff;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            margin-top: 20px; /* Adjusted margin */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .toggle-switch {
+            margin-top: 15px;
+        }
+        #loadingBarContainer {
+            display: none;
+            width: 100%;
+            background-color: #ddd;
+            margin-top: 20px;
+        }
+        #loadingBar {
+            height: 20px;
+            width: 0%;
+            background-color: #4CAF50;
+            background: linear-gradient(90deg, #4CAF50 50%, #ddd 50%);
+            background-size: 200% 100%;
+            animation: loading 2s linear infinite;
+        }
+        @keyframes loading {
+            from { background-position: 200% 0; }
+            to { background-position: -200% 0; }
+        }
+    </style>
+
+    <!-- Include PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <!-- Include JSZip for handling ZIP files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <!-- Include shpjs for converting shapefiles to GeoJSON -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shpjs/3.6.3/shp.min.js"></script>
+    <!-- Include FileSaver.js for saving files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Join CSV to Shapefile</h1>
+        <div class="flex-row">
+            <div class="column">
+                <!-- <input type="text" id="shpInput" placeholder="Enter Shapefile ZIP URL">
+                <input type="file" id="shpFileUpload" accept=".zip"> -->
+                <div class="upload-area">
+                    <label for="shapefile-uploader">Upload Shapefile (ZIP)</label>
+                    <input type="file" id="shapefile-uploader" accept=".zip">
+                </div>
+                <select id="shapefileFieldSelect">
+                    <option>Select Shapefile Join Field</option>
+                </select>
+                <div class="toggle-switch">
+                  <input type="radio" id="primaryShapefile" name="primaryTable" value="shapefile" checked>
+                  <label for="primaryShapefile">Shapefile as Primary</label><br>
+                </div>
+            </div>
+            <div class="column">
+                <!-- <input type="text" id="csvInput" placeholder="Enter CSV URL">
+                <input type="file" id="csvFileUpload" accept=".csv"> -->
+                <div class="upload-area">
+                    <label for="csvFile">Upload CSV File</label>
+                    <input type="file" id="csvFile" accept=".csv">
+                </div>
+                <select id="csvFieldSelect">
+                    <option>Select CSV Join Field</option>
+                </select>
+                <div class="toggle-switch">
+                  <input type="radio" id="primaryCSV" name="primaryTable" value="csv">
+                  <label for="primaryCSV">CSV as Primary</label>
+                </div>
+            </div>
+        </div>
+        <button id="joinAndDownload" class="full-width">Join Data</button>
+        <div id="loadingBarContainer">
+            <div id="loadingBar"></div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
