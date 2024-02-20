@@ -4,10 +4,78 @@ let globalShapefileGeoJSON = null;
 let shapefileName = "";
 
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById("shapefile-uploader").addEventListener('change', handleShapefileUpload);
-    document.getElementById('csvFile').addEventListener('change', handleCSVUpload);
+    // Unified event listener for file uploads
+    document.getElementById("shapefile-uploader").addEventListener('change', unifiedFileUploadHandler);
+    document.getElementById('csvFile').addEventListener('change', unifiedFileUploadHandler);
     document.getElementById('joinAndDownload').addEventListener('click', performTestRun);
 });
+
+function unifiedFileUploadHandler(event) {
+    document.getElementById('loadingBarContainer').style.display = 'block';
+    const file = event.target.files[0];
+    shapefileName = file.name.split('.').slice(0, -1).join('.').replace(/_/g, ' ');
+
+    if (file.type === "application/zip" || file.name.endsWith('.zip')) {
+        // Handle both ZIP files containing shapefiles and CSVs
+        processZipFile(file);
+    } else if (file.type === "text/csv" || file.name.endsWith('.csv')) {
+        // Handle direct CSV file uploads
+        processCSVFile(file); // Direct processing for CSV files
+    } else {
+        console.error('Unsupported file type uploaded.');
+        document.getElementById('loadingBarContainer').style.display = 'none';
+    }
+}
+
+async function processZipFile(file, depth = 0) {
+    try {
+        const zip = await JSZip.loadAsync(file);
+        let fileToProcess = null;
+
+        // Check the contents of the ZIP for .shp or .csv files
+        Object.keys(zip.files).forEach(fileName => {
+            if (fileName.toLowerCase().endsWith('.shp')) {
+                fileToProcess = 'shapefile';
+            } else if (fileName.toLowerCase().endsWith('.csv') && !fileToProcess) {
+                // Prioritize shapefiles; only set to process as CSV if a shapefile hasn't been found
+                fileToProcess = 'csv';
+            }
+        });
+
+        if (fileToProcess === 'shapefile') {
+            // Process the ZIP file with the shapefile using shpjs
+            processShapefile(file);
+        } else if (fileToProcess === 'csv') {
+            // If a CSV file is found, extract and process it
+            for (const [fileName, zipEntry] of Object.entries(zip.files)) {
+                if (fileName.toLowerCase().endsWith('.csv')) {
+                    const csvBlob = await zipEntry.async("blob");
+                    processCSVFile(csvBlob);
+                    return; // Exit after processing the first CSV found
+                }
+            }
+        } else {
+            // If no relevant files are found and depth is within limits, look for nested ZIPs
+            for (const [fileName, zipEntry] of Object.entries(zip.files)) {
+                if (fileName.toLowerCase().endsWith('.zip') && depth < 1) {
+                    const nestedZipBlob = await zipEntry.async("blob");
+                    await processZipFile(nestedZipBlob, depth + 1);
+                    return;
+                }
+            }
+
+            if (depth === 0) {
+                console.log('No shapefile or CSV found in the ZIP.');
+            }
+        }
+    } catch (error) {
+        console.error('Error processing ZIP file:', error);
+    } finally {
+        document.getElementById('loadingBarContainer').style.display = 'none';
+    }
+}
+
+// The handleCSVUpload, processShapefile, and other utility functions remain unchanged
 
 function handleCSVUpload(event) {
     const file = event.target.files[0];
@@ -24,24 +92,52 @@ function handleCSVUpload(event) {
 }
 
 function handleShapefileUpload(event) {
-    // Show the loading bar and reset its width
     document.getElementById('loadingBarContainer').style.display = 'block';
     document.getElementById('loadingBar').style.width = '100%';
 
     const file = event.target.files[0];
-    // Extract the base name for the shapefile without the extension
-    shapefileName = file.name.split('.').slice(0, -1).join('.').replace(/_/g, ' '); // Adjust as necessary
+    shapefileName = file.name.split('.').slice(0, -1).join('.').replace(/_/g, ' ');
 
+    if (file.name.endsWith('.zip')) {
+        // Initial call to handle ZIP files, starting with depth 0
+        processNestedZip(file, 0);
+    } else {
+        // Directly process non-ZIP shapefile uploads (for completeness)
+        processShapefile(file);
+    }
+}
+
+function processCSVFile(file) {
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            console.log("CSV parsing results:", results);
+            globalCSVData = results.data;
+            const csvFields = results.meta.fields;
+            populateFieldSelections(csvFields, 'csvFieldSelect');
+            document.getElementById('loadingBarContainer').style.display = 'none';
+        }
+    });
+}
+
+
+function processShapefile(file) {
     fileToArrayBuffer(file).then(buffer => {
         shp(buffer).then(function(geojson) {
             console.log("Converted GeoJSON:", geojson);
             globalShapefileGeoJSON = geojson;
             const shapefileFields = Object.keys(geojson.features[0].properties);
             populateFieldSelections(shapefileFields, 'shapefileFieldSelect');
-
             document.getElementById('loadingBarContainer').style.display = 'none';
-        }).catch(console.error);
-    }).catch(console.error);
+        }).catch(error => {
+            console.error('Error processing shapefile:', error);
+            document.getElementById('loadingBarContainer').style.display = 'none';
+        });
+    }).catch(error => {
+        console.error('Error converting file to ArrayBuffer:', error);
+        document.getElementById('loadingBarContainer').style.display = 'none';
+    });
 }
 
 function fileToArrayBuffer(file) {
@@ -55,7 +151,12 @@ function fileToArrayBuffer(file) {
 
 function populateFieldSelections(fields, selectId) {
     const select = document.getElementById(selectId);
-    select.innerHTML = fields.map(field => `<option value="${field}">${field}</option>`).join('');
+    const options = fields.map(field => {
+        const isSelected = field.toLowerCase() === "gisjoin" ? ' selected' : '';
+        return `<option value="${field}"${isSelected}>${field}</option>`;
+    }).join('');
+
+    select.innerHTML = options;
 }
 
 function performTestRun() {
