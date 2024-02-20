@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Join CSV to Shapefile</title>
+    <title>Join CSV to Shapefile v4.1 with Nested Zip</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -67,7 +67,7 @@
             background-color: #4CAF50;
             background: linear-gradient(90deg, #4CAF50 50%, #ddd 50%);
             background-size: 200% 100%;
-            animation: loading 2s linear infinite;
+            animation: loading 4s linear infinite;
         }
         @keyframes loading {
             from { background-position: 200% 0; }
@@ -86,7 +86,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Join CSV to Shapefile</h1>
+        <h1>Join CSV to Shapefile v4.1 Nested Zip</h1>
         <div class="flex-row">
             <div class="column">
                 <!-- <input type="text" id="shpInput" placeholder="Enter Shapefile ZIP URL">
@@ -108,7 +108,7 @@
                 <input type="file" id="csvFileUpload" accept=".csv"> -->
                 <div class="upload-area">
                     <label for="csvFile">Upload CSV File</label>
-                    <input type="file" id="csvFile" accept=".csv">
+                    <input type="file" id="csvFile" accept=".csv,.zip">
                 </div>
                 <select id="csvFieldSelect">
                     <option>Select CSV Join Field</option>
@@ -124,6 +124,6 @@
             <div id="loadingBar"></div>
         </div>
     </div>
-    <script src="app.js"></script>
+    <script src="app_v4_1.js"></script>
 </body>
 </html>
