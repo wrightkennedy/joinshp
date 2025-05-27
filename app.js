@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById("shapefile-uploader").addEventListener('change', unifiedFileUploadHandler);
     document.getElementById('csvFile').addEventListener('change', unifiedFileUploadHandler);
     document.getElementById('joinAndDownload').addEventListener('click', performTestRun);
+    document.getElementById('convertOnly').addEventListener('click', downloadShapefileOnly);
 });
 
 function unifiedFileUploadHandler(event) {
@@ -25,6 +26,17 @@ function unifiedFileUploadHandler(event) {
         console.error('Unsupported file type uploaded.');
         document.getElementById('loadingBarContainer').style.display = 'none';
     }
+}
+
+function downloadShapefileOnly() {
+    if (!globalShapefileGeoJSON) {
+        alert("Please upload a Shapefile (ZIP) first.");
+        return;
+    }
+
+    const outputFilename = shapefileName ? `${shapefileName}_converted.geojson` : "shapefile.geojson";
+    const blob = new Blob([JSON.stringify(globalShapefileGeoJSON)], { type: "application/geo+json" });
+    saveAs(blob, outputFilename);
 }
 
 async function processZipFile(file, depth = 0) {
