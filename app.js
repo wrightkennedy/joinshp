@@ -274,6 +274,13 @@ function joinCSVPrimary(csvData, shapefileGeoJSON) {
     return newGeoJSON;
 }
 
+function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
+    if (isIOS()) {
+        alert("Warning: iOS and iPadOS may not fully support large file downloads. Consider using a desktop browser.");
+    }
+
 function joinAndDownloadGeoJSON() {
     // No need to pass csvField and shapefileField as arguments here, since they are fetched within the functions that need them.
     if (!globalCSVData || !globalShapefileGeoJSON) {
