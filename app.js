@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('joinAndDownload').addEventListener('click', performTestRun);
     document.getElementById('convertOnly').addEventListener('click', downloadShapefileOnly);
     if (isIOS()) {
-        alert("⚠️ iOS and iPadOS may not support large file downloads. Use a desktop browser for best results.");
+        alert("⚠️ iOS and iPadOS may not support large file downloads from this tool (over 100MB). For best results, use a desktop browser.");
     }
 });
 
