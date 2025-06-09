@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('csvFile').addEventListener('change', unifiedFileUploadHandler);
     document.getElementById('joinAndDownload').addEventListener('click', performTestRun);
     document.getElementById('convertOnly').addEventListener('click', downloadShapefileOnly);
+    if (isIOS()) {
+        alert("⚠️ iOS and iPadOS may not support large file downloads. Use a desktop browser for best results.");
+    }
 });
 
 function unifiedFileUploadHandler(event) {
@@ -273,13 +276,6 @@ function joinCSVPrimary(csvData, shapefileGeoJSON) {
 
     return newGeoJSON;
 }
-
-function isIOS() {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    }
-    if (isIOS()) {
-        alert("Warning: iOS and iPadOS may not fully support large file downloads. Consider using a desktop browser.");
-    }
 
 function joinAndDownloadGeoJSON() {
     // No need to pass csvField and shapefileField as arguments here, since they are fetched within the functions that need them.
